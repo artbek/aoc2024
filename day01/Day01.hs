@@ -20,7 +20,7 @@ sumOfDistances :: String -> Int
 sumOfDistances ss = sum $ map (\ (x,y) -> abs (x - y)) (sortedLists ss)
 
 sortedLists :: String -> [(Int, Int)]
-sortedLists ss = zip (sort (leftList ss)) (sort (rightList ss))
+sortedLists ss = zip (leftList ss) (rightList ss)
 
 
 -- Part 2
@@ -40,8 +40,11 @@ part2 ss = similarityScore (leftList ss) (rightList ss)
 
 -- Helpers
 
+makeList :: ([String] -> String) -> String -> [Int]
+makeList f = sort . map (read . f . words) . lines
+
 leftList :: String -> [Int]
-leftList = map (read . head . words) . lines
+leftList = makeList head
 
 rightList :: String -> [Int]
-rightList = map (read . last . words) . lines
+rightList = makeList last
