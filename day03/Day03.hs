@@ -49,7 +49,7 @@ argIsValid aa = all isDigit aa && elem (length aa) [1..3]
 -- Part 2
 
 part2 :: String -> Int
-part2 = sum . map mul . pairsOfNumbers . candidates . parse Enabled
+part2 = part1 . parse Enabled
 
 data Mode = Enabled | Disabled deriving (Eq)
 
