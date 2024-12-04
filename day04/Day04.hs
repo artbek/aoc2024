@@ -28,48 +28,34 @@ getCount :: [String] -> Int
 getCount = sum . map getLineCount
 
 getCountAll :: [String] -> Int
-getCountAll ss = getCount ss +
-                 getCount (rot45 ss) +
-
-                 getCount (rot90 ss) +
-                 getCount (rot45 $ rot90 ss) +
-
-                 getCount (rot90 $ rot90 ss) +
-                 getCount (rot45 $ rot90 $ rot90 ss) +
-
-                 getCount (rot90 $ rot90 $ rot90 ss) +
-                 getCount (rot45 $ rot90 $ rot90 $ rot90 ss)
+getCountAll ss = getCount rot0 + getCount (rot45 rot0) +
+                 getCount rot1 + getCount (rot45 $ rot1) +
+                 getCount rot2 + getCount (rot45 $ rot2) +
+                 getCount rot3 + getCount (rot45 $ rot3)
+                 where rot0 = ss
+                       rot1 = rot90 rot0
+                       rot2 = rot90 rot1
+                       rot3 = rot90 rot2
 
 rot90 :: [String] -> [String]
 rot90 = transpose . map reverse
 
--- 123
--- 456
--- 789
 
--- Step 1 (rot45p):
---
--- 32147
---  658
---   9
-
--- Step 2 (rot90):
---
--- 3
--- 26
--- 159
--- 48
--- 7
-
-rot45p :: [String] -> [String]
-rot45p (s:[]) = [s]
-rot45p   (ss) = line : rot45p peeledTopAndLeft
+-- Input:     Step 1 (rot45part):    Step 2 (rot45):
+-- 123        32147                  3
+-- 456         658                   26
+-- 789          9                    159
+--                                   48
+--                                   7
+rot45part :: [String] -> [String]
+rot45part (s:[]) = [s]
+rot45part   (ss) = line : rot45part peeledTopAndLeft
     where
         line = (reverse $ head ss) ++ (tail $ head $ transpose ss)
         peeledTopAndLeft = transpose $ tail $ transpose $ tail ss
 
 rot45 :: [String] -> [String]
-rot45 ss = transpose $ zipWith (++) padding (rot45p ss)
+rot45 ss = transpose $ zipWith (++) padding (rot45part ss)
     where
         padding = inits $ take 140 $ repeat ' '
 
