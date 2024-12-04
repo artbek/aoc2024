@@ -1,4 +1,4 @@
-module Day02 where
+module Day03 where
 
 import Data.List (tails, isPrefixOf)
 import Data.Char (isDigit)
