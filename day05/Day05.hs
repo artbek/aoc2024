@@ -9,11 +9,11 @@ main = do
     answer_1_live <- part1 <$> readFile "input.txt"
     putStrLn $ "Part 1: " ++ (show answer_1_live) ++ " (live)"
 
-    -- answer_2_test <- part2 <$> readFile "test_input.txt"
-    -- putStrLn $ "Part 2: " ++ (show answer_2_test) ++ " (test)"
+    answer_2_test <- part2 <$> readFile "test_input.txt"
+    putStrLn $ "Part 2: " ++ (show answer_2_test) ++ " (test)"
 
-    -- answer_2_live <- part2 <$> readFile "input.txt"
-    -- putStrLn $ "Part 2: " ++ (show answer_2_live) ++ " (live)"
+    answer_2_live <- part2 <$> readFile "input.txt"
+    putStrLn $ "Part 2: " ++ (show answer_2_live) ++ " (live)"
 
 
 -- Part 1
@@ -25,8 +25,10 @@ getMiddle :: [Int] -> Int
 getMiddle xs = xs!!(length xs `div` 2)
 
 getValidUpdates :: String -> [[Int]]
-getValidUpdates ss = [ u | u <- getAllUpdates ss, u == customSort u rules ]
+getValidUpdates ss = [ u | u <- updates, isValid u ]
     where
+        isValid = \x -> x == customSort x rules
+        updates = getAllUpdates ss
         rules = getAllRules ss
 
 getAllUpdates :: String -> [[Int]]
@@ -47,7 +49,14 @@ myCompare a b rules = if matchingRule == [a,b] then LT else GT
 -- Part 2
 
 part2 :: String -> Int
-part2 ss = 0
+part2 = sum . map getMiddle . getInvalidUpdates
+
+getInvalidUpdates :: String -> [[Int]]
+getInvalidUpdates ss = [ customSort u rules | u <- updates, isInvalid u ]
+    where
+        isInvalid = \x -> x /= customSort x rules
+        updates = getAllUpdates ss
+        rules = getAllRules ss
 
 
 -- Helpers
