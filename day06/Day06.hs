@@ -33,7 +33,7 @@ getAllSteps :: String -> Map
 getAllSteps ss = placeChar '^' steps guardPos
     where
         mm       = getMap ss
-        steps    = getSteps (mm, guardPos, N) (0,10000)
+        steps    = getSteps (mm, guardPos, N) (0, 6000)
         guardPos = findGuard mm 0
 
 getMap :: String -> Map
@@ -96,21 +96,18 @@ turnRight W = N
 -- Part 2 --
 
 part2 :: String -> Int
-part2 ss = testPositions $ getAllCandidates guardPos $ getAllSteps ss
-    where
-        mm = getMap ss
-        guardPos = findGuard mm 0
+part2 = testPositions . getAllCandidates . getAllSteps
 
-getAllCandidates :: Pos -> Map -> ([Pos], Map)
-getAllCandidates guardPos mm = (candidates, mm)
+getAllCandidates :: Map -> ([Pos], Map)
+getAllCandidates mm = (candidates, mm)
     where
         candidates      = map fst $ filter candidateTest stepsWithCoords
-        candidateTest   = (\((r, c), x) -> x == 'x' && (r,c) /= guardPos)
+        candidateTest   = (\((r,c), x) -> x == 'x')
         stepsWithCoords = getStepsWithCoords mm
 
 getStepsWithCoords :: Map -> [(Pos, Char)]
 getStepsWithCoords mm = [ ((r,c), cc)
-                        | (r, rr) <- zip [0..] mm, (c,cc) <- zip [0..] rr
+                        | (r,rr) <- zip [0..] mm, (c,cc) <- zip [0..] rr
                         ]
 
 testPositions :: ([Pos], Map) -> Int
@@ -131,4 +128,16 @@ loopScore :: Map -> Int
 loopScore mm = if (steps == [[]]) then 1 else 0
     where
         guardPos = findGuard mm 0
-        steps    = getSteps (mm, guardPos, N) (0,10000)
+        steps    = getSteps' (mm, guardPos, N) (0, 6000)
+
+-- Faster version of getSteps
+getSteps' :: (Map, Pos, Dir) -> (Int, Int) -> Map
+getSteps' (mm, pos, dir) (stepNum, maxSteps)
+    | stepNum >= maxSteps  = [[]]
+    | isOutsideTheMap pos mm = mm
+    | isOnObstacle newPos mm = getSteps' (newMap, pos, newDir) (stepNum, maxSteps)
+    | otherwise              = getSteps' (newMap, newPos, dir) (stepNum + 1, maxSteps)
+    where
+        newPos = nextPos pos dir
+        newDir = turnRight dir
+        newMap = mm -- placeChar 'x' mm pos
