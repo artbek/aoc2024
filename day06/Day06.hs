@@ -19,10 +19,11 @@ main = do
 
 -- Data --
 
-type Map = [[Char]]
+type Map = ([[Char]], Int)
 type Pos = (Int, Int)
 data Dir = N | E | S | W deriving (Eq, Show)
 
+emptyMap = ([[]], 0)
 
 -- Part 1 --
 
@@ -37,22 +38,22 @@ getAllSteps ss = placeChar '^' steps guardPos
         guardPos = findGuard mm 0
 
 getMap :: String -> Map
-getMap = lines
+getMap ss = (lines ss, length $ lines ss)
 
 findGuard :: Map -> Int -> Pos
-findGuard (r:rs) rowIdx =
+findGuard ((r:rs), mapSize) rowIdx =
     if elem '^' r
         then (rowIdx, fromMaybe 0 colIdx)
-        else findGuard rs (rowIdx + 1)
+        else findGuard (rs, mapSize) (rowIdx + 1)
     where
         colIdx = findIndex (== '^') r
 
 countFootprints :: Map -> Int
-countFootprints = length . filter (== 'x') . concat
+countFootprints mm = length $ filter (== 'x') $ concat (fst mm)
 
 getSteps :: (Map, Pos, Dir) -> (Int, Int) -> Map
 getSteps (mm, pos, dir) (stepNum, maxSteps)
-    | stepNum >= maxSteps  = [[]]
+    | stepNum >= maxSteps  = emptyMap
     | isOutsideTheMap pos mm = mm
     | isOnObstacle newPos mm = getSteps (newMap, pos, newDir) (stepNum, maxSteps)
     | otherwise              = getSteps (newMap, newPos, dir) (stepNum + 1, maxSteps)
@@ -69,16 +70,17 @@ isOutsideTheMap pos mm =
     where
         row = fst pos
         col = snd pos
-        maxRow = length mm - 1 -- performance bottleneck
+        maxRow = (snd mm) - 1
         maxCol = maxRow
 
 isOnObstacle :: Pos -> Map -> Bool
 isOnObstacle pos mm
     | isOutsideTheMap pos mm = False
-    | otherwise = mm!!row!!col == '#'
+    | otherwise = tiles!!row!!col == '#'
     where
         row = fst pos
         col = snd pos
+        tiles = fst mm
 
 nextPos :: Pos -> Dir -> Pos
 nextPos (row, col) N = (row - 1, col + 0)
@@ -107,7 +109,7 @@ getAllCandidates mm = (candidates, mm)
 
 getStepsWithCoords :: Map -> [(Pos, Char)]
 getStepsWithCoords mm = [ ((r,c), cc)
-                        | (r,rr) <- zip [0..] mm, (c,cc) <- zip [0..] rr
+                        | (r,rr) <- zip [0..] (fst mm), (c,cc) <- zip [0..] rr
                         ]
 
 testPositions :: ([Pos], Map) -> Int
@@ -117,15 +119,16 @@ testPositions ((p:ps), mm) = loopScore candidateMap + testPositions (ps, mm)
         candidateMap = placeChar '#' mm p
 
 placeChar :: Char -> Map -> Pos -> Map
-placeChar c mm pos = take row mm ++ [newRow] ++ drop (row + 1) mm
+placeChar c mm pos = (take row tiles ++ [newRow] ++ drop (row + 1) tiles, snd mm)
     where
+        tiles = fst mm
         row = fst pos
         col = snd pos
-        curRow = mm!!row
+        curRow = tiles!!row
         newRow = take col curRow ++ [c] ++ drop (col + 1) curRow
 
 loopScore :: Map -> Int
-loopScore mm = if (steps == [[]]) then 1 else 0
+loopScore mm = if (steps == emptyMap) then 1 else 0
     where
         guardPos = findGuard mm 0
         steps    = getSteps' (mm, guardPos, N) (0, 6000)
@@ -133,7 +136,7 @@ loopScore mm = if (steps == [[]]) then 1 else 0
 -- Faster version of getSteps
 getSteps' :: (Map, Pos, Dir) -> (Int, Int) -> Map
 getSteps' (mm, pos, dir) (stepNum, maxSteps)
-    | stepNum >= maxSteps  = [[]]
+    | stepNum >= maxSteps  = emptyMap
     | isOutsideTheMap pos mm = mm
     | isOnObstacle newPos mm = getSteps' (newMap, pos, newDir) (stepNum, maxSteps)
     | otherwise              = getSteps' (newMap, newPos, dir) (stepNum + 1, maxSteps)
