@@ -69,8 +69,8 @@ isOutsideTheMap pos mm =
     where
         row = fst pos
         col = snd pos
-        maxRow = length mm - 1
-        maxCol = length (mm!!0) - 1
+        maxRow = length mm - 1 -- performance bottleneck
+        maxCol = maxRow
 
 isOnObstacle :: Pos -> Map -> Bool
 isOnObstacle pos mm
