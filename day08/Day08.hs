@@ -4,16 +4,18 @@ import Data.List (nub, sort, tails)
 
 main = do
     answer_1_test <- part1 <$> readFile "test_input.txt"
-    putStrLn $ "Part 1: " ++ (show answer_1_test) ++ " (test)"
+    putStrLn $ "Solution: " ++ (show answer_1_test) ++ " (test)"
 
     answer_1_live <- part1 <$> readFile "input.txt"
-    putStrLn $ "Part 1: " ++ (show answer_1_live) ++ " (live)"
+    putStrLn $ "Solution: " ++ (show answer_1_live) ++ " (live)"
 
-    -- answer_2_test <- part2 <$> readFile "test_input.txt"
-    -- putStrLn $ "Part 2: " ++ (show answer_2_test) ++ " (test)"
 
-    -- answer_2_live <- part2 <$> readFile "input.txt"
-    -- putStrLn $ "Part 2: " ++ (show answer_2_live) ++ " (live)"
+-- Config --
+
+-- choose getPairAntinodes1 for part 1 solution ...
+-- getPairAntinodes = getPairAntinodes1
+-- ... or getPairAntinodes2 for part 2 solution
+getPairAntinodes = getPairAntinodes2
 
 
 -- Data types --
@@ -25,6 +27,15 @@ type City = ([Antenna], Int)
 
 
 -- Part 1 --
+
+getPairAntinodes1 :: City -> (Pos, Pos) -> [Pos]
+getPairAntinodes1 city (p1, p2) = filter (isValidPos gridSize) [an1, an2]
+    where
+        gridSize = snd city
+        d1 = (fst p1 - fst p2, snd p1 - snd p2)
+        an1 = p1 <+> d1
+        d2 = (fst p2 - fst p1, snd p2 - snd p1)
+        an2 = p2 <+> d2
 
 part1 :: String -> Int
 part1 ss = length $ nub $ getAllAntinodes city freqs
@@ -50,33 +61,24 @@ getFreqs = nub . sort . map fst . fst
 
 getAllAntinodes :: City -> [Freq] -> [Pos]
 getAllAntinodes city []   = []
-getAllAntinodes city (f:fs) =
-    filter (isValidPos gridSize) antinodes ++ getAllAntinodes city fs
+getAllAntinodes city (f:fs) = antinodes ++ getAllAntinodes city fs
     where
         antennas = getAntennas f city
-        antinodes = getGroupAntinodes antennas
-        gridSize = snd city
+        antinodes = getGroupAntinodes city antennas
 
 getAntennas :: Freq -> City -> [Pos]
 getAntennas freq city = map snd $ filter (\x -> fst x == freq) antennas
     where
         antennas = fst city
 
-getGroupAntinodes :: [Pos] -> [Pos]
-getGroupAntinodes = concat . map getPairAntinodes . getPairs
+getGroupAntinodes :: City -> [Pos] -> [Pos]
+getGroupAntinodes city = concat . map (getPairAntinodes city) . getPairs
 
 getPairs :: [Pos] -> [(Pos, Pos)]
 getPairs pp = [ (fst g, h) | g <- groups, h <- snd g ]
     where
         groups = map (\x -> (head x, tail x)) $ init $ init $ tails pp
 
-getPairAntinodes :: (Pos, Pos) -> [Pos]
-getPairAntinodes (p1, p2) = [antinode_1, antinode_2]
-    where
-        d1 = (fst p1 - fst p2, snd p1 - snd p2)
-        antinode_1 = (fst p1 + fst d1, snd p1 + snd d1)
-        d2 = (fst p2 - fst p1, snd p2 - snd p1)
-        antinode_2 = (fst p2 + fst d2, snd p2 + snd d2)
 
 isValidPos :: Int -> Pos -> Bool
 isValidPos gridSize p =
@@ -85,8 +87,20 @@ isValidPos gridSize p =
         row = fst p
         col = snd p
 
+(<+>) :: Pos -> Pos -> Pos
+(<+>) v1 v2 = (fst v1 + fst v2, snd v1 + snd v2)
+
 
 -- Part 2 --
 
-part2 :: String -> Int
-part2 = length
+part2 = part1
+
+getPairAntinodes2 :: City -> (Pos, Pos) -> [Pos]
+getPairAntinodes2 city (p1, p2) = filter (isValidPos gridSize) (an1 ++ an2)
+    where
+        gridSize = snd city
+        d1 = (fst p1 - fst p2, snd p1 - snd p2)
+        an1 = take 130 $ scanl (\b a -> b <+> a) p1 (repeat d1)
+
+        d2 = (fst p2 - fst p1, snd p2 - snd p1)
+        an2 = take 130 $ scanl (\b a -> b <+> a) p2 (repeat d2)
