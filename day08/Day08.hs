@@ -12,9 +12,7 @@ main = do
 
 -- Config --
 
--- choose getPairAntinodes1 for part 1 solution ...
--- getPairAntinodes = getPairAntinodes1
--- ... or getPairAntinodes2 for part 2 solution
+-- Use "getPairAntinodes1" or "getPairAntinodes2" for part 1 or part 2 solution:
 getPairAntinodes = getPairAntinodes2
 
 
