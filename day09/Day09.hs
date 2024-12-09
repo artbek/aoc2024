@@ -4,6 +4,7 @@ import Data.Array
 import Data.Char
 import Data.List
 
+
 main = do
     answer_1_test <- part1 <$> readFile "test_input.txt"
     putStrLn $ "Part 1: " ++ (show answer_1_test) ++ " (test)"
@@ -18,11 +19,9 @@ main = do
     putStrLn $ "Part 2: " ++ (show answer_2_live) ++ " (live)"
 
 
+-- Part 1 --
 
 type Disk = [Int]
-
-
--- Part 1 --
 
 part1 :: String -> Int
 part1 ss = getChecksum compressedDisk
