@@ -10,11 +10,11 @@ main = do
     answer_1_live <- part1 <$> readFile "input.txt"
     putStrLn $ "Part 1: " ++ (show answer_1_live) ++ " (live)"
 
-    -- answer_2_test <- part2 <$> readFile "test_input.txt"
-    -- putStrLn $ "Part 2: " ++ (show answer_2_test) ++ " (test)"
+    answer_2_test <- part2 <$> readFile "test_input5.txt"
+    putStrLn $ "Part 2: " ++ (show answer_2_test) ++ " (test)"
 
-    -- answer_2_live <- part2 <$> readFile "input.txt"
-    -- putStrLn $ "Part 2: " ++ (show answer_2_live) ++ " (live)"
+    answer_2_live <- part2 <$> readFile "input.txt"
+    putStrLn $ "Part 2: " ++ (show answer_2_live) ++ " (live)"
 
 
 -- Part 1 --
@@ -57,7 +57,6 @@ findTrails r c prevHeight mm
     | visited curTile     = []
     | elevation  > 1      = []
     | elevation  < 1      = []
-    | False == True       = []
     | height curTile == 9 = [curTile]
     | otherwise = [] ++ trailN ++ trailE ++ trailS ++ trailW
     where
@@ -92,7 +91,17 @@ isOutside row col mm =
 -- Part 2 --
 
 part2 :: String -> Int
-part2 = length
+part2 ss = countTrails' mm startingPos
+    where
+        mm = strToMap ss
+        startingPos = findAllZeros mm
+
+countTrails' :: Map -> [(Int, Int)] -> Int
+countTrails' mm []     = 0
+countTrails' mm (p:ps) = count + countTrails' mm ps
+    where
+        tiles = findTrails (fst p) (snd p) (-1) mm
+        count = length $ tiles
 
 
 -- Helpers --
