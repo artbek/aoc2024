@@ -1,8 +1,7 @@
 module Main where
 
-import Data.Array
-import Data.Char
-import Data.List
+import Data.Char (intToDigit)
+import Data.List (sort, sortBy)
 
 
 main = do
