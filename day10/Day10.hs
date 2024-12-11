@@ -3,6 +3,7 @@ module Main where
 import Data.Char (digitToInt, intToDigit)
 import Data.List (groupBy, nub)
 
+
 main = do
     answer_1_test <- part1 <$> readFile "test_input5.txt"
     putStrLn $ "Part 1: " ++ (show answer_1_test) ++ " (test)"
