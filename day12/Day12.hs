@@ -1,6 +1,6 @@
 module Main where
 
-import Data.List (groupBy, sortBy)
+import Data.List (groupBy, nub, sortBy)
 
 
 main = do
@@ -11,16 +11,28 @@ main = do
     putStrLn $ "(test) Part 1.2  (772): " ++ (show answer_1_2_test)
 
     answer_1_3_test <- part1 <$> readFile "test_input_3.txt"
-    putStrLn $ "(test) Part 1.2 (1930): " ++ (show answer_1_3_test)
+    putStrLn $ "(test) Part 1.3 (1930): " ++ (show answer_1_3_test)
 
     answer_1_live <- part1 <$> readFile "input.txt"
     putStrLn $ "(live) Part 1: " ++ (show answer_1_live)
 
-    -- let answer_2_test = part2 "125 17"
-    -- putStrLn $ "Part 2: " ++ (show answer_2_test) ++ " (test)"
+    answer_2_1_test <- part2 <$> readFile "test_input_1.txt"
+    putStrLn $ "(test) Part 2.1  (80): " ++ (show answer_2_1_test)
 
-    -- answer_2_live <- part2 <$> readFile "input.txt"
-    -- putStrLn $ "Part 2: " ++ (show answer_2_live) ++ " (live)"
+    answer_2_2_test <- part2 <$> readFile "test_input_2.txt"
+    putStrLn $ "(test) Part 2.2  (436): " ++ (show answer_2_2_test)
+
+    answer_2_3_test <- part2 <$> readFile "test_input_3.txt"
+    putStrLn $ "(test) Part 2.3 (1206): " ++ (show answer_2_3_test)
+
+    answer_2_4_test <- part2 <$> readFile "test_input_4.txt"
+    putStrLn $ "(test) Part 2.4  (236): " ++ (show answer_2_4_test)
+
+    answer_2_5_test <- part2 <$> readFile "test_input_5.txt"
+    putStrLn $ "(test) Part 2.5  (368): " ++ (show answer_2_5_test)
+
+    answer_2_live <- part2 <$> readFile "input.txt"
+    putStrLn $ "Part 2: " ++ (show answer_2_live) ++ " (live)"
 
 
 -- Data --
@@ -103,32 +115,60 @@ unvisitedTiles = filter (\x -> plotId x == -1) . concat . fst
 findUnvisitedTile :: Farm -> Tile
 findUnvisitedTile = head . unvisitedTiles
 
-getAllPlotsGrouped :: Farm -> [[Tile]]
+getAllPlotsGrouped :: Farm -> [Plot]
 getAllPlotsGrouped = customGroup . customSort . concat . fst
     where
         customSort  = sortBy (\a b -> compare (plotId a) (plotId b))
         customGroup = groupBy (\a b -> plotId a == plotId b)
 
-getPrice :: Farm -> [Tile] -> Int
+getPrice :: Farm -> Plot -> Int
 getPrice ff pp = getArea pp * getPerimeter ff pp
 
-getArea :: [Tile] -> Int
+getArea :: Plot -> Int
 getArea = length
 
-getPerimeter :: Farm -> [Tile] -> Int
-getPerimeter ff []     = 0
-getPerimeter ff (t:tt) = totalScore + getPerimeter ff tt
+getPerimeter :: Farm -> Plot -> Int
+getPerimeter ff plot = length $ getFenceSegments ff plot
+
+getFenceSegments :: Farm -> Plot -> [FenceSegment]
+getFenceSegments ff []     = []
+getFenceSegments ff (t:tt) = customSort (allSegs ++ getFenceSegments ff tt)
     where
         r = row t
         c = col t
-        scoreN = if isTileInvalid ff (r-1, c+0) (val t) then 1 else 0
-        scoreE = if isTileInvalid ff (r+0, c+1) (val t) then 1 else 0
-        scoreS = if isTileInvalid ff (r+1, c+0) (val t) then 1 else 0
-        scoreW = if isTileInvalid ff (r+0, c-1) (val t) then 1 else 0
-        totalScore = scoreN + scoreE + scoreS + scoreW
+        pid = plotId t
+        segN = if isTileInvalid ff (r-1, c+0) (val t) then [((r, r-1, 'H'), c)] else []
+        segE = if isTileInvalid ff (r+0, c+1) (val t) then [((c, c+1, 'V'), r)] else []
+        segS = if isTileInvalid ff (r+1, c+0) (val t) then [((r, r+1, 'H'), c)] else []
+        segW = if isTileInvalid ff (r+0, c-1) (val t) then [((c, c-1, 'V'), r)] else []
+        allSegs = segN ++ segE ++ segS ++ segW
+        customSort = sortBy (\a b -> compare (fst a) (fst b))
 
 
 -- Part 2 --
 
+type FenceSegment = ((Int, Int, Char), Int)
+
 part2 :: String -> Int
-part2 = length
+part2 ss = sum $ map (getPrice' ff) $ groupedPlots
+    where
+        ff = strToFarm ss
+        groupedPlots = getAllPlotsGrouped $ markAllPlots 0 $ ff
+
+getPrice' :: Farm -> Plot -> Int
+getPrice' ff plot = getArea plot * getPerimeter' ff plot
+
+getPerimeter' :: Farm -> Plot -> Int
+getPerimeter' ff plot = length $ nub $ concat $ groupedBySide
+    where
+        fenceSegs = getFenceSegments ff plot
+        groupedByLine = groupBy (\a b -> fst a == fst b) fenceSegs
+        groupedBySide = [ groupAdjacent line 0 [] | line <- groupedByLine ]
+
+groupAdjacent :: [FenceSegment] -> Int -> [FenceSegment] -> [FenceSegment]
+groupAdjacent (a:[])   groupId acc = acc ++ [(fst a, groupId)]
+groupAdjacent (a:b:xs) groupId acc
+    | snd b - snd a <= 1 = groupAdjacent (b:xs) (groupId)     newAcc
+    | otherwise          = groupAdjacent (b:xs) (groupId + 1) newAcc
+    where
+        newAcc = acc ++ [(fst a, groupId)]
