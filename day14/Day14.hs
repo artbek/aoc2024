@@ -1,18 +1,20 @@
 module Main where
 
+import Debug.Trace
+
 
 main = do
-    answer_1_test <- part1 (11,7) <$> readFile "test_input.txt"
+    answer_1_test <- part1 (11, 7) <$> readFile "test_input.txt"
     putStrLn $ "(test) Part 1 (12): " ++ (show answer_1_test)
 
-    answer_1_live <- part1 (101,103) <$> readFile "input.txt"
+    answer_1_live <- part1 (101, 103) <$> readFile "input.txt"
     putStrLn $ "(live) Part 1: " ++ (show answer_1_live)
 
-    -- answer_2_test <- part2 <$> readFile "test_input_1.txt"
-    -- putStrLn $ "(test) Part 2 (???): " ++ (show answer_2_test)
+    -- answer_2_test <- part2 (11, 7) <$> readFile "test_input.txt"
+    -- putStrLn $ "(test) Part 2 (???): \n" ++ (show answer_2_test)
 
-    -- answer_2_live <- part2 <$> readFile "input.txt"
-    -- putStrLn $ "(live) Part 2: " ++ (show answer_2_live)
+    answer_2_live <- part2 (101, 103) <$> readFile "input.txt"
+    putStrLn $ "(live) Part 2: " ++ (show answer_2_live)
 
 
 -- Part 1 --
@@ -48,6 +50,76 @@ countRobots minC minR maxC maxR = length . filter isInQuadrant . map (fst)
     where
         isInQuadrant = (\x -> fst x >= minC && fst x <= maxC &&
                               snd x >= minR && snd x <= maxR)
+
+
+-- Part 2 --
+
+{-
+  OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+  O                             O
+  O                             O
+  O                             O
+  O                             O
+  O              O              O
+  O             OOO             O
+  O            OOOOO            O
+  O           OOOOOOO           O
+  O          OOOOOOOOO          O
+  O            OOOOO            O
+  O           OOOOOOO           O
+  O          OOOOOOOOO          O
+  O         OOOOOOOOOOO         O
+  O        OOOOOOOOOOOOO        O
+  O          OOOOOOOOO          O
+  O         OOOOOOOOOOO         O
+  O        OOOOOOOOOOOOO        O
+  O       OOOOOOOOOOOOOOO       O
+  O      OOOOOOOOOOOOOOOOO      O
+  O        OOOOOOOOOOOOO        O
+  O       OOOOOOOOOOOOOOO       O
+  O      OOOOOOOOOOOOOOOOO      O
+  O     OOOOOOOOOOOOOOOOOOO     O
+  O    OOOOOOOOOOOOOOOOOOOOO    O
+  O             OOO             O
+  O             OOO             O
+  O             OOO             O
+  O                             O
+  O                             O
+  O                             O
+  O                             O
+  OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+-}
+
+part2 :: (Int, Int) -> String -> Int
+part2 (cols, rows) ss = stepRobots (cols, rows) newRobots 0
+    where
+        robots = map strToRobot $ lines ss
+        newRobots = map (moveRobot (11 + (76 * 101)) (cols, rows)) robots
+
+stepRobots :: (Int, Int) -> [Robot] -> Int -> Int
+stepRobots (cols, rows) robots  (-1) = -999
+stepRobots (cols, rows) robots steps =
+    trace ("Step " ++ show steps)
+    trace (printRobots (cols, rows) robots)
+    stepRobots (cols, rows) newRobots stepsLeft
+        where
+            newRobots = map (moveRobot 101 (cols, rows)) robots
+            stepsLeft = steps - 1
+
+printRobots :: (Int, Int) -> [Robot] -> String
+printRobots (cols, rows) rr = unlines $ splitEvery cols tempStr
+    where
+        tempStr = [ getChar (c,r) rr | r <- rowIds, c <- colIds ]
+        rowIds = [0..(rows-1)]
+        colIds = [0..(cols-1)]
+        getChar (x,y) vals
+            | lookup (x,y) vals == Nothing = ' '
+            | otherwise = 'O'
+
+splitEvery :: Int -> [a] -> [[a]]
+splitEvery _ [] = []
+splitEvery n xs = as : splitEvery n bs
+  where (as,bs) = splitAt n xs
 
 
 -- Helpers
