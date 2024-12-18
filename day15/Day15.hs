@@ -1,17 +1,16 @@
 module Main where
 
 import Data.Array
-import Data.List (sortBy)
 
 
 main = do
-    answer_1_1_test <- part1 7 <$> readFile "test_input_1.txt"
+    answer_1_1_test <- part1 (7,7) <$> readFile "test_input_1.txt"
     putStrLn $ "(test) Part 1.1 (2028): " ++ (show answer_1_1_test)
 
-    answer_1_2_test <- part1 9 <$> readFile "test_input_2.txt"
+    answer_1_2_test <- part1 (9,9) <$> readFile "test_input_2.txt"
     putStrLn $ "(test) Part 1.2 (10092): " ++ (show answer_1_2_test)
 
-    answer_1 <- part1 49 <$> readFile "input.txt"
+    answer_1 <- part1 (49,49) <$> readFile "input.txt"
     putStrLn $ "(live) Part 1 (???): " ++ (show answer_1)
 
 
@@ -25,18 +24,18 @@ type Tile = (Pos, Char)
 
 -- Part 1 --
 
-strToMaze :: String -> Int -> Maze
-strToMaze ss size = listArray ((0,0), (size,size)) $ concat $ mazeLines
+strToMaze :: String -> (Int, Int) -> Maze
+strToMaze ss dim = listArray ((0,0), (snd dim, fst dim)) $ concat $ mazeLines
     where
         mazeLines = takeWhile (/="") $ lines ss
 
 strToMoves :: String -> [Move]
 strToMoves = concat . tail . dropWhile (/="") . lines
 
-part1 :: Int -> String -> Int
-part1 size ss = calcScore $ stepAll maze moves
+part1 :: (Int, Int) -> String -> Int
+part1 dim ss = calcScore $ stepAll maze moves
     where
-        maze = strToMaze ss size
+        maze = strToMaze ss dim
         moves = strToMoves ss
 
 calcScore :: Maze -> Int
@@ -88,12 +87,69 @@ getCurPos :: Maze -> Pos
 getCurPos maze = head [ p | p <- range $ bounds maze, maze!p == '@' ]
 
 printMaze :: Maze -> String
-printMaze maze = unlines $ splitEvery mazeSize $ elems maze
+printMaze maze = unlines $ splitEvery mazeWidth $ elems maze
     where
-        mazeSize = (fst $ snd $ bounds maze) + 1
+        mazeWidth = (snd $ snd $ bounds maze) + 1
 
 splitEvery :: Int -> String -> [String]
 splitEvery _ [] = []
 splitEvery n ss = left : splitEvery n right
     where
         (left, right) = splitAt n ss
+
+
+-- Part 2 --
+
+type LargeBox = (Pos, Pos)
+
+emptyBox :: LargeBox
+emptyBox = ((0,0), (0,0))
+
+getVertGroup :: Maze -> Move -> LargeBox -> [LargeBox]
+getVertGroup maze move curBox
+    | testArea == "[]" = [curBox] ++ f box0
+    | testArea == "][" = [curBox] ++ f box1 ++ f box2
+    | testArea == "]." = [curBox] ++ f box1
+    | testArea == ".[" = [curBox] ++ f box2
+    | testArea == ".." = [curBox] -- can be moved?
+    | otherwise        = [emptyBox] -- can't be moved?
+    where
+        testArea = maze ! (rowL+dir, colL) : maze ! (rowR+dir, colR) : ""
+        (rowL, colL) = fst curBox
+        (rowR, colR) = snd curBox
+        f = getVertGroup maze move
+        dir
+            | move == '^' = -1
+            | move == 'v' = 1
+        box0 = ((rowL+dir, colL+0), (rowR+dir, colR+0))
+        box1 = ((rowL+dir, colL-1), (rowR+dir, colR-1))
+        box2 = ((rowL+dir, colL+1), (rowR+dir, colR+1))
+
+
+canVertGroupMove :: [LargeBox] -> Bool
+canVertGroupMove boxes = length [ b | b <- boxes, b == emptyBox ] == 0
+
+moveVertGroup :: Maze -> Move -> [LargeBox] -> Maze
+moveVertGroup maze move boxes = maze''
+    where
+        maze' = removeVertGroup maze boxes
+        maze'' = updateVertGroup maze' move boxes
+
+removeVertGroup :: Maze -> [LargeBox] -> Maze
+removeVertGroup maze [] = maze;
+removeVertGroup maze (b:bb) = removeVertGroup newMaze bb
+    where
+        p1 = fst b
+        p2 = snd b
+        newMaze = maze // [ (p1, '.'), (p2, '.') ]
+
+updateVertGroup :: Maze -> Move -> [LargeBox] -> Maze
+updateVertGroup maze move [] = maze
+updateVertGroup maze move (b:bb) = updateVertGroup newMaze move bb
+    where
+        p1 = fst b
+        p2 = snd b
+        p1' = getNewPos p1 move
+        p2' = getNewPos p2 move
+        newMaze = maze // [ (p1', '['), (p2', ']') ]
+
