@@ -11,6 +11,12 @@ main = do
     answer_1_live <- part1 1024 (70,70) <$> readFile "input.txt"
     putStrLn $ "(live) Part 1 (???): " ++ (show answer_1_live)
 
+    answer_2_test <- part2 12 (6,6) <$> readFile "test_input.txt"
+    putStrLn $ "(test) Part 2 (6,1): " ++ answer_2_test
+
+    answer_2_live <- part2 1024 (70,70) <$> readFile "input.txt"
+    putStrLn $ "(live) Part 2 (?,?): " ++ answer_2_live
+
 
 -- Data --
 
@@ -19,12 +25,14 @@ data Sq = Sq { val :: Char, isVisited :: Bool } deriving Show
 type Pos = (Int, Int)
 type Maze = Array Pos Sq
 
+strToBytes :: String -> [Pos]
+strToBytes ss = map (toTuple . words . replaceChars "," ' ') (lines ss)
+
 strToMaze :: Int -> (Int,Int) -> String -> Maze
 strToMaze qty dim ss = foldl (\b (c,r) -> b // [((r,c), Sq '#' False)]) m corrupted
     where
         m = emptyMaze dim
-        coords = map (toTuple . words . replaceChars "," ' ') (lines ss)
-        corrupted = take qty coords
+        corrupted = take qty (strToBytes ss)
 
 emptyMaze :: (Int,Int) -> Maze
 emptyMaze (maxRow, maxCol) = listArray ((0,0), (maxRow,maxCol)) mazeList
@@ -35,15 +43,15 @@ emptyMaze (maxRow, maxCol) = listArray ((0,0), (maxRow,maxCol)) mazeList
 -- Part 1 --
 
 part1 :: Int -> (Int,Int) -> String -> Int
-part1 qty dim ss = bfs maze [(0,0)] 0
+part1 qty dim ss = findPath maze [(0,0)] 0
     where
-        maze         = strToMaze qty dim ss
+        maze = strToMaze qty dim ss
 
-bfs :: Maze -> [Pos] -> Int -> Int
-bfs maze        [] cost = -999
-bfs maze positions cost
+findPath :: Maze -> [Pos] -> Int -> Int
+findPath maze        [] cost = -999
+findPath maze positions cost
     | foundExit = cost
-    | otherwise = bfs maze' (nub neighbours) (cost + 1)
+    | otherwise = findPath maze' (nub neighbours) (cost + 1)
     where
         maze'      = maze // [ (pos, Sq 'O' True) | pos <- positions ]
         neighbours = foldl (\b a -> b ++ findNbrs maze' a) [] positions
@@ -70,6 +78,17 @@ isLegal maze pos@(r,c)
     where
         sq = maze!pos
         (maxRowIdx, maxColIdx) = snd $ bounds maze
+
+
+-- Part 2 --
+
+part2 :: Int -> (Int,Int) -> String -> String
+part2 qty dim ss
+    | pathLen < 0 = show $ (strToBytes ss)!!(qty-1)
+    | otherwise   = part2 (qty + 1) dim ss
+    where
+        maze    = strToMaze qty dim ss
+        pathLen = findPath maze [(0,0)] 0
 
 
 -- Helpers --
