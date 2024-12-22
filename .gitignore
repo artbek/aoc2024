@@ -4,3 +4,5 @@ inspiration.txt
 *.hi
 *.o
 *.prof
+
+dist-*
